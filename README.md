@@ -5,7 +5,7 @@ Farcaster Based Agent is a farcaster based fork of Onchain Agent Demo frontend l
 Farcaster Based Agent is a tool born in the intersection of onchain and social, of base and farcaster, of an agent and a client. Allowing endless combinations between the best of both worlds.
 
 Imagine retrieving your favorite content from farcaster, ask the agent to summarize it, find trends, and perform some onchain actions based in the input like swaping or launching tokens and nfts.
-Imagine asking the agent to write a beauiful haiku based on the content and create a nft, then publish it to farcaster and send some private messages to influencers to spread the word. 
+Imagine asking the agent to write a beautiful haiku based on the content and create a nft, then publish it to farcaster and send some private messages to influencers to spread the word. 
 
 This simple and minimalistic tool could be the starter point for any farcaster creator looking to leverage the power of onchain, agents and social. 
 SocialFi just gets better and easier with a Farcater Based Agent on your team. Tho, remember, if you become the dev.. you cannot blame the devs anymore.

@@ -14,7 +14,7 @@ import { API_URL } from '../config';
 dotenv.config();
 
 // Add this right after imports and before any other code
-validateEnvironment();
+//validateEnvironment();
 
 // The main prompt configuring the personality or persona of the agent
 const SYSTEM_PROMPT = 
@@ -150,6 +150,7 @@ The toolkit provides the following tools:
  * @throws {Error} - If required environment variables are missing
  * @returns {void}
  */
+/*
 function validateEnvironment(apiKey?: string): void {
   const missingVars: string[] = [];
 
@@ -186,6 +187,7 @@ function validateEnvironment(apiKey?: string): void {
     console.warn("Warning: NETWORK_ID not set, defaulting to base-sepolia testnet");
   }
 }
+*/
 
 /**
  * Initialize the agent with CDP AgentKit
@@ -193,7 +195,7 @@ function validateEnvironment(apiKey?: string): void {
  * @returns Agent executor and config
  */
 async function initializeAgent(apiKey?: string) {
-  validateEnvironment(apiKey);
+  //validateEnvironment(apiKey);
   
   // Initialize LLM
   const llm = process.env.CURRENT_LLM === "anthropic" ? 

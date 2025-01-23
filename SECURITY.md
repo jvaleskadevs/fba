@@ -1,4 +1,4 @@
-# Security Policy
+# Security Policy (from Onchain Agent Demo)
 
 The Coinbase team takes security seriously. Please do not file a public ticket discussing a potential vulnerability.
 

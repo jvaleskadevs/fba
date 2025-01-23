@@ -30,6 +30,7 @@ yarn-error.log*
 next-env.d.ts
 
 .env
+app/only_test_wallet_data.txt
 
 # python
 /api/__pycache__/

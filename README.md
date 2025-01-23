@@ -1,8 +1,9 @@
 # Farcaster Based Agent
 
-Farcaster Based Agent is a farcaster based fork of Onchain Agent Demo frontend leveraging the Agentkit and the OnchainKit by @coinbase with extended farcaster capablities by @neynar and @warpcast.
+Farcaster Based Agent is a farcaster based fork of Onchain Agent Demo frontend leveraging the Agentkit and the OnchainKit by @coinbase with extended farcaster capabilities by @neynar and @warpcast.
 
 Farcaster Based Agent is a tool born in the intersection of onchain and social, of base and farcaster, of an agent and a client. Allowing endless combinations between the best of both worlds.
+
 Imagine retrieving your favorite content from farcaster, ask the agent to summarize it, find trends, and perform some onchain actions based in the input like swaping or launching tokens and nfts.
 Imagine asking the agent to write a beauiful haiku based on the content and create a nft, then publish it to farcaster and send some private messages to influencers to spread the word. 
 
@@ -11,11 +12,11 @@ SocialFi just gets better and easier with a Farcater Based Agent on your team. T
 
 A video demo showing some capabilities can be found [here.](https://youtu.be/6CmiZIh8gwU)
 
-### Agent Capabilities aka tools
+### Agent Capabilities aka Tools
 
 The toolkit provides the following tools:
 
-#### Onchain Based tools
+#### Onchain Based Tools
 
 - get_wallet_details - Get details about the MPC Wallet
 - get_balance - Get balance for specific assets
@@ -35,7 +36,7 @@ The toolkit provides the following tools:
 - get_balance_nft - Get balance for specific NFTs (ERC-721)
 - transfer_nft - Transfer an NFT (ERC-721)
 
-#### Farcaster Social tools
+#### Farcaster Social Tools
 
 - send_cast - Publish a cast in the farcaster social network
 - send_direct_cast - Send a private message in the farcaster social network
@@ -76,7 +77,7 @@ Since the original Onchain Agent Demo backend has been written in Python. We cod
 }
 ```
 
- - A `app/only_test_wallet_data.txt` including the agent wallet data must be included to perform onchain actions. Get it removing the comments in the lines 258 and 259 of the `app/lib/llm_anthropic_with_wallet.ts` file and running the agent. It will export a new wallet to this file. (don't do this on production, use safe methods)
+ - A `app/only_test_wallet_data.txt` including the agent wallet data must be included for permanent wallet data. Get it removing the comments in the lines 258 and 259 of the `app/lib/llm_anthropic_with_wallet.ts` file and running the agent. It will export a new wallet to this file. (don't do this on production, use safe methods). Running it without permanency will create 1 wallet per execution.
 
 ```
 {"walletId":"your-wallet-id","seed":"your-private-seed","networkId":"base-sepolia","defaultAddressId":"your-address"}

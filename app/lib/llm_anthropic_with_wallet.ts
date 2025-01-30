@@ -1,5 +1,6 @@
 import { CdpAgentkit } from "@coinbase/cdp-agentkit-core";
-import { CdpToolkit, CdpTool } from "@coinbase/cdp-langchain";
+import { CdpToolkit/*, CdpTool*/ } from "@coinbase/cdp-langchain";
+import { CdpToolWithArgs } from "./cdpToolWithArgs";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { ChatAnthropic } from "@langchain/anthropic";
@@ -9,7 +10,6 @@ import { z } from "zod";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import { API_URL } from '../config';
-
 
 dotenv.config();
 
@@ -24,7 +24,7 @@ const SYSTEM_PROMPT =
 
 // Configure a file to persist the agent's CDP MPC Wallet Data
 // must be an absolute path !? why?
-const WALLET_DATA_FILE = "/home/jvaleskadevs/projects/based/onchain-agent-demo/app/only_test_wallet_data.txt";
+const WALLET_DATA_FILE = "~/app/only_test_wallet_data.txt";
 
 
 ////////////////// SEND CAST tool
@@ -37,6 +37,7 @@ const SendCastInput = z
   .object({
     content: z.string().describe("The content of the cast to publish in farcaster."),
     channelId: z.string().optional().describe("The channelId of the farcaster channel to publish the cast on. Use 'onchain-blocks'"),
+    args: z.array(z.object({})).optional().describe("A  list of arguments sent by the user. Ignore it.")
   })
   .strip()
   .describe("Instructions for publishing a farcaster cast. Use it when the user asks for it.");
@@ -46,6 +47,7 @@ const SendDirectCastInput = z
   .object({
     content: z.string().describe("The content of the cast to publish in farcaster."),
     fid: z.string().describe("The fid of the of the user to send the cast to. Ex: 13505, 16628"),
+    args: z.array(z.object({})).optional().describe("A  list of arguments sent by the user. Ignore it.")
   })
   .strip()
   .describe("Instructions for sending a farcaster direct cast to a recipient. Use it when the user asks for it.");
@@ -64,7 +66,8 @@ async function sendCast(args: z.infer<typeof SendCastInput>): Promise<boolean> {
     },
     body: JSON.stringify({
       content: args?.content,
-      channelId: args?.channelId
+      channelId: args?.channelId,
+      signerUUID: args?.args?.[0] 
     })
   });
   if (!response.ok) {
@@ -90,7 +93,8 @@ async function sendDirectCast(args: z.infer<typeof SendDirectCastInput>): Promis
     },
     body: JSON.stringify({
       content: args?.content,
-      fid: args?.fid
+      fid: args?.fid,
+      wcKey: args?.args?.[0]
     })
   });
   if (!response.ok) {
@@ -102,22 +106,7 @@ async function sendDirectCast(args: z.infer<typeof SendDirectCastInput>): Promis
 }
 
 
-// Configure our custom tools to add in top of the CDP Toolkit
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CUSTOM_TOOLS: any[] = [
-  {
-    name: "send_cast",
-    description: SEND_CAST_DESC,
-    argsSchema: SendCastInput,
-    func: sendCast,
-  },
-  {
-    name: "send_direct_cast",
-    description: SEND_DIRECT_CAST_DESC,
-    argsSchema: SendDirectCastInput,
-    func: sendDirectCast,
-  }  
-];
+
 
 /**
 
@@ -194,18 +183,23 @@ function validateEnvironment(apiKey?: string): void {
  *
  * @returns Agent executor and config
  */
-async function initializeAgent(apiKey?: string) {
+async function initializeAgent(apiKey?: string, tag?: string, signerUUID?: string, wcApiKey?: string) {
   //validateEnvironment(apiKey);
-  
+  console.log("tag", tag);
   // Initialize LLM
-  const llm = process.env.CURRENT_LLM === "anthropic" ? 
+  const llm = (tag === "anthropic" || process.env.CURRENT_LLM === "anthropic") ? 
     new ChatAnthropic({
       apiKey: process.env.ANTHROPIC_API_KEY ?? apiKey,
       model: "claude-3-5-sonnet-20241022",
-    }) : process.env.CURRENT_LLM === "openai" ?
+    }) : (tag === "openai" || process.env.CURRENT_LLM === "openai") ?
     new ChatOpenAI({
-        apiKey: process.env.OPENAI_API_KEY ?? apiKey,
+        apiKey: process.env.OPEN_AI_API_KEY ?? apiKey,
         model: "gpt-4o-mini",
+    }) : (tag === "venice" || process.env.CURRENT_LLM === "venice") ?
+    new ChatOpenAI({
+        apiKey: process.env.VENICE_API_KEY ?? apiKey,
+        configuration: { baseURL: "https://api.venice.ai/api/v1" },
+        model: "deepseek-r1-llama-70b",
       }) : null;
   
   if (!llm) return { agent: null, config: null };
@@ -235,18 +229,41 @@ async function initializeAgent(apiKey?: string) {
   // Initialize CDP AgentKit
   const agentkit = await CdpAgentkit.configureWithWallet(config);
 
+  // Configure our custom tools to add in top of the CDP Toolkit
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const CUSTOM_TOOLS: any[] = [
+    {
+      name: "send_cast",
+      description: SEND_CAST_DESC,
+      argsSchema: SendCastInput,
+      func: sendCast,
+      args: [signerUUID]
+    },
+    {
+      name: "send_direct_cast",
+      description: SEND_DIRECT_CAST_DESC,
+      argsSchema: SendDirectCastInput,
+      func: sendDirectCast,
+      args: [wcApiKey]
+    }  
+  ];
+
   // Initialize CDP AgentKit Toolkit and get tools
   const cdpToolkit = new CdpToolkit(agentkit);
   const tools = cdpToolkit.getTools();
   
   // Add our custom tools on top of the CDP Toolkit
   for (const tool of CUSTOM_TOOLS) {
-    tools.push(new CdpTool(tool, agentkit));
+    tools.push(new CdpToolWithArgs(
+      tool, 
+      agentkit, 
+      tool.args//[tool.name === "send_cast" ? signerUUID : wcApiKey]
+    ));
   }
 
   // Store buffered conversation history in memory
   const memory = new MemorySaver();
-  const agentConfig = { configurable: { thread_id: "Onchain Claude Test" } };
+  const agentConfig = { configurable: { thread_id: "Farcaster Based Agent" } };
 
   // Create React Agent using the LLM and CDP AgentKit tools
   const agent = createReactAgent({
@@ -271,16 +288,24 @@ async function initializeAgent(apiKey?: string) {
  * @param config - User Message
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function runChatMode(/*agent: any, config: any,*/ userInput: string, apiKey?: string): Promise<string[]> {
+async function runChatMode(/*agent: any, config: any,*/ 
+  userInput: string, 
+  apiKey?: string, 
+  tag?: string,
+  signerUUID?: string, 
+  wcApiKey?: string
+): Promise<string[]> {
   console.log("-------------------");
   console.log("Agent Response:");
   try {
-    const { agent, config } = await initializeAgent(apiKey);   
+    const { agent, config } = await initializeAgent(apiKey, tag, signerUUID, wcApiKey); 
     if (!agent) return []; 
     const stream = await agent.stream({ 
       messages: [new HumanMessage(userInput)] }, 
       config
     );
+    
+    //console.log(stream);
 
     const agentResponses: string[] = [];
     for await (const chunk of stream) {
@@ -322,9 +347,15 @@ async function runChatMode(/*agent: any, config: any,*/ userInput: string, apiKe
   return [] as string[];
 }
 
-export async function getOnchainClaudeResponse(userInput: string, apiKey?: string): Promise<string[]> {
-  //const { agent, config } = await initializeAgent();
-  return userInput ? await runChatMode(userInput, apiKey) : [];
+export async function getOnchainClaudeResponse(
+  userInput: string, 
+  apiKey?: string, 
+  tag?: string,
+  signerUUID?: string, 
+  wcApiKey?: string
+): Promise<string[]> {
+  console.log(tag);
+  return userInput ? await runChatMode(userInput, apiKey, tag, signerUUID, wcApiKey) : [];
 }
 
 

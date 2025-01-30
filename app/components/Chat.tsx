@@ -1,12 +1,13 @@
 import { cn } from '@coinbase/onchainkit/theme';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNeynarContext } from "@neynar/react";
 import useChat from '../hooks/useChat';
 import type { /*AgentMessage,*/ StreamEntry } from '../types';
 import { generateUUID, markdownToPlainText, formatHumanMessage } from '../utils';
 import ChatInput from './ChatInput';
 import StreamItem from './StreamItem';
 import ApiKeyDisplay from './ApiKeyDisplay';
-import { Cast } from '../types';
+import { ApiKeyType, Cast } from '../types';
 
 
 type ChatProps = {
@@ -17,6 +18,8 @@ type ChatProps = {
 };
 
 export default function Chat({ className, getNFTs, getTokens, casts }: ChatProps) {
+  const { user } = useNeynarContext();
+  
   const [userInput, setUserInput] = useState('');
   const [streamEntries, setStreamEntries] = useState<StreamEntry[]>([]);
   
@@ -27,11 +30,15 @@ export default function Chat({ className, getNFTs, getTokens, casts }: ChatProps
   const [apiKeys, setApiKeys] = useState<{
     openai?: string;
     anthropic?: string;
+    venice?: string;
+    warpcast?: string;
   }>({ 
+    anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
     openai: process.env.NEXT_PUBLIC_OPEN_AI_API_KEY,
-    anthropic: process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
+    venice: process.env.NEXT_PUBLIC_VENICE_API_KEY,
+    warpcast: process.env.NEXT_PUBLIC_WC_API_KEY
   });
-  const [currentApiKey, setCurrentApiKey] = useState<string>("anthropic");
+  const [currentApiKey, setCurrentApiKey] = useState<ApiKeyType>(ApiKeyType.venice);
   
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -52,16 +59,24 @@ export default function Chat({ className, getNFTs, getTokens, casts }: ChatProps
     }
   }, [getTokens, shouldRefetchTokens]);
   
-  const handleSetApiKeys = (provider: 'openai' | 'anthropic', key: string) => {
-    if (provider === 'openai') {
-      setApiKeys(prev => ({ anthropic: prev.anthropic, openai: key }));      
+  const handleSetApiKeys = (provider: ApiKeyType, key: string) => {
+    if (provider === ApiKeyType.openai) {
+      setApiKeys(prev => ({ anthropic: prev.anthropic, openai: key, venice: prev.venice, warpcast: prev.warpcast }));      
     } 
     
-    if (provider === 'anthropic') {
-      setApiKeys(prev => ({ anthropic: key, openai: prev.openai }));
+    if (provider === ApiKeyType.anthropic) {
+      setApiKeys(prev => ({ anthropic: key, openai: prev.openai, venice: prev.venice, warpcast: prev.warpcast }));
     }
     
-    setCurrentApiKey(provider);
+    if (provider === ApiKeyType.venice) {
+      setApiKeys(prev => ({ anthropic: prev.anthropic, openai: prev.openai, venice: key, warpcast: prev.warpcast }));
+    }
+    
+    if (provider === ApiKeyType.warpcast) {
+      setApiKeys(prev => ({ anthropic: prev.anthropic, openai: prev.openai, venice: prev.venice, warpcast: key }));
+    }
+    
+    setCurrentApiKey(provider !== ApiKeyType.warpcast ? provider : currentApiKey);
   }
 
 /*
@@ -123,15 +138,23 @@ export default function Chat({ className, getNFTs, getTokens, casts }: ChatProps
       const userMessage: StreamEntry = {
         timestamp: new Date(),
         type: 'user',
-        content: `${casts && casts.length > 0 ? "· system: All Casts has been successfully included.\n" : ""}· user: ${userInput.trim()}`,
+        content: `${
+          casts && casts.length > 0 ? "· system: All Casts has been successfully included.\n" : ""
+        }· user: ${userInput.trim()}`,
       };
 
       setStreamEntries((prev) => [...prev, userMessage]);
       setUserInput('');
   
-      postChat(userMsg, currentApiKey === 'anthropic' ? apiKeys.anthropic : apiKeys.openai);
+      postChat(
+        userMsg, 
+        currentApiKey === ApiKeyType.anthropic ? apiKeys.anthropic : currentApiKey === ApiKeyType.openai ? apiKeys.openai : currentApiKey === ApiKeyType.venice ? apiKeys.venice : undefined, 
+        currentApiKey,
+        user?.signer_uuid, 
+        apiKeys.warpcast
+      );
     },
-    [postChat, userInput, casts, apiKeys, currentApiKey],
+    [postChat, userInput, casts, apiKeys, currentApiKey, user?.signer_uuid],
   );
 
   const handleKeyPress = useCallback(

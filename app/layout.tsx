@@ -1,6 +1,7 @@
 import '@coinbase/onchainkit/styles.css';
 import type { Metadata } from 'next';
 import './globals.css';
+import "@neynar/react/dist/style.css";
 import { Providers } from './providers';
 
 export const metadata: Metadata = {

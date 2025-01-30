@@ -1,5 +1,6 @@
 'use client';
 
+import { NeynarContextProvider, Theme } from "@neynar/react";
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
@@ -36,18 +37,29 @@ export function Providers(props: {
   return (
     <WagmiProvider config={config} initialState={props.initialState}>
       <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider
-          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_CDP_KEY}
-          chain={baseSepolia}
-          config={{
-            appearance: {
-              mode: 'auto',
-              theme: 'base',
+        <NeynarContextProvider
+          settings={{
+            clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID || "",
+            defaultTheme: Theme.Light,
+            eventsCallbacks: {
+              onAuthSuccess: () => {},
+              onSignout() {},
             },
           }}
-        >
-          {props.children}
-        </OnchainKitProvider>
+        > 
+          <OnchainKitProvider
+            apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_CDP_KEY}
+            chain={baseSepolia}
+            config={{
+              appearance: {
+                mode: 'auto',
+                theme: 'base',
+              },
+            }}
+          >
+            {props.children}
+          </OnchainKitProvider>
+        </NeynarContextProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

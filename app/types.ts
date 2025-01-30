@@ -41,6 +41,13 @@ export type Cast = {
   text: string;
   hash: string;
   channel: string;
-  quoted: { author: string; text: string }[],
-  url: string
+  quoted: { author: string; text: string }[];
+  url: string;
+}
+
+export enum ApiKeyType {
+  anthropic = "anthropic",
+  openai = "openai",
+  venice = "venice",
+  warpcast = "warpcast"
 }

@@ -14,9 +14,10 @@ const splitInChunks = (content: string): string[] => {
 }
 
 export async function POST(req: NextRequest) {
-  const { content, fid } = await req?.json();
+  const { content, fid, wcKey } = await req?.json();
 
   if (!content || !fid) return NextResponse.json({ error: 'No valid content|fid' }, { status: 500 });
+  if (!process.env.WC_API_KEY && !wcKey) return  NextResponse.json({ error: 'No warpcast key' }, { status: 500 }); 
 
   try {
     // cast max length is 1024 characters.. splitting in chunks
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
       const options = {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${process.env.WC_API_KEY || ""}`,
+          Authorization: `Bearer ${process.env.WC_API_KEY || wcKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({

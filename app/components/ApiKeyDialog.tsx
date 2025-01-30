@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
+import { NeynarAuthButton, SIWN_variant } from "@neynar/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
+import { ApiKeyType } from '@/app/types';
 
 interface ApiKeyDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  setApiKey: (provider: 'openai' | 'anthropic', key: string) => void;
+  setApiKey: (provider: ApiKeyType, key: string) => void;
 }
 
 const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ isOpen, onClose, setApiKey }) => {
-  const [provider, setProvider] = useState<'openai' | 'anthropic'>('openai');
+  const [provider, setProvider] = useState<ApiKeyType>(ApiKeyType.openai);
   const [key, setKey] = useState('');
 
   const handleSubmit = () => {
@@ -28,13 +30,14 @@ const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ isOpen, onClose, setApiKey 
           <DialogTitle>Enter API Key</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Select value={provider} onValueChange={(val) => setProvider(val as 'openai' | 'anthropic')}>
+          <Select value={provider} onValueChange={(val) => setProvider(val as ApiKeyType)}>
             <SelectTrigger>
               <SelectValue placeholder="Select Provider" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
+              <SelectItem value={ApiKeyType.openai}>OpenAI</SelectItem>
+              <SelectItem value={ApiKeyType.anthropic}>Anthropic</SelectItem>
+              <SelectItem value={ApiKeyType.warpcast}>Warpcast</SelectItem>
             </SelectContent>
           </Select>
           <Input 
@@ -43,7 +46,10 @@ const ApiKeyDialog: React.FC<ApiKeyDialogProps> = ({ isOpen, onClose, setApiKey 
             value={key}
             onChange={(e) => setKey(e.target.value)}
           />
-          <Button onClick={handleSubmit} variant="outline">Save API Key</Button>
+          <div className="w-full flex flex-row justify-between px-4">
+            <Button onClick={handleSubmit} variant="outline">Save API Key</Button>
+            <NeynarAuthButton variant={SIWN_variant.FARCASTER} className="max-w-[240px]" />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

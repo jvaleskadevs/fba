@@ -13,9 +13,10 @@ const splitInChunks = (content: string): string[] => {
 }
 
 export async function POST(req: NextRequest) {
-  const { content, channelId } = await req?.json();
+  const { content, channelId, signerUUID } = await req?.json();
   
-  if (!content) return NextResponse.json({ error: 'No valid content' }, { status: 500 });
+  if (!content || (!signerUUID && !process.env.AGENT_SIGNER_UUID)) 
+    return NextResponse.json({ error: 'No valid content' }, { status: 500 });
 
   try {
     // cast max length is 1024 characters.. splitting in chunks
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          signer_uuid: process.env.AGENT_SIGNER_UUID, 
+          signer_uuid: process.env.AGENT_SIGNER_UUID || signerUUID, 
           text: cast,
           //embeds: [{url: frame}],
           channel_id: channelId ?? null,

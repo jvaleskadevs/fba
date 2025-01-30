@@ -6,7 +6,7 @@ import { generateUUID } from '../utils';
 type UseChatResponse = {
   messages?: string[];//AgentMessage[];
   error?: Error;
-  postChat: (input: string, apiKey?: string) => void;
+  postChat: (input: string, apiKey?: string, tag?: string, signerUUID?: string, wcApiKey?: string) => void;
   isLoading: boolean;
 };
 
@@ -22,7 +22,7 @@ export default function useChat({
   const [isLoading, setIsLoading] = useState(false);
 
   const postChat = useCallback(
-    async (input: string, apiKey?: string) => {
+    async (input: string, apiKey?: string, tag?: string, signerUUID?: string, wcApiKey?: string) => {
       setIsLoading(true);
 
       try {
@@ -33,8 +33,11 @@ export default function useChat({
           },
           body: JSON.stringify({
             apiKey,
+            tag,
             input,
             conversationId: conversationId || generateUUID(),
+            signerUUID,
+            wcApiKey
           }),
         });
 

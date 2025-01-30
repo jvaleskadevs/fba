@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import ApiKeyPopup from './ApiKeyDialog';
+import { ApiKeyType } from '@/app/types';
 
 interface ApiKeyDisplayProps {
   apiKeys: { openai?: string, anthropic?: string },
-  setApiKey: (provider: 'openai' | 'anthropic', key: string) => void;
+  setApiKey: (provider: ApiKeyType, key: string) => void;
+  username?: string;
 }
 
-const ApiKeyDisplay = ({ apiKeys, setApiKey }: ApiKeyDisplayProps) => {
+const ApiKeyDisplay = ({ apiKeys, setApiKey, username }: ApiKeyDisplayProps) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-  const handleSetApiKey = (provider: 'openai' | 'anthropic', key: string) => {
+  const handleSetApiKey = (provider: ApiKeyType, key: string) => {
     setApiKey(provider, key);
   };
 
@@ -22,6 +24,7 @@ const ApiKeyDisplay = ({ apiKeys, setApiKey }: ApiKeyDisplayProps) => {
       />
 
       <div className="mt-4">
+        { username && <p className="mb-2">{`welcome ${username}`}</p> }
         {Object.keys(apiKeys).map(provider => (
           <div key={provider}>
             {provider}: {apiKeys[provider as keyof typeof apiKeys] ? 'ready' : 'missing key'}
@@ -33,7 +36,7 @@ const ApiKeyDisplay = ({ apiKeys, setApiKey }: ApiKeyDisplayProps) => {
         onClick={() => setIsPopupOpen(true)}
         className="border border-[#5788FA]/50 text-[#5788FA] px-4 py-2"
       >
-        Add API Key
+        Config Agent
       </button>
     </div>
   );
